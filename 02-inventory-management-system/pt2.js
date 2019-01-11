@@ -4,45 +4,35 @@ const data = readFile(process.argv[2])
 
 const dataArray = data.split('\n')
 
-function stringsHaveOneMismatch(stringA, stringB) {
+function deriveSharedLetters(stringA, stringB) {
   let mismatchCount = 0
+  let sharedLetters = ''
+
   for (let i = 0; i < stringA.length; i++) {
     if (stringA[i] !== stringB[i]) {
       mismatchCount++
+    } else {
+      sharedLetters = sharedLetters + stringA[i]
     }
+
     if (mismatchCount > 1) {
       break
     }
   }
 
-  return mismatchCount !== 1 ? false : true
+  return mismatchCount !== 1 ? '' : sharedLetters
 }
 
 function findMatchingBoxes(data) {
-  let matches = []
-
-  data.forEach((str, idx) => {
-    data.forEach((compareStr, compareIdx) => {
-      if (idx === compareIdx) return
-
-      if (stringsHaveOneMismatch(str, compareStr)) {
-        matches.push(str, compareStr)
+  return data.reduce((acc, str, idx) => {
+    for (let i = idx + 1; i < data.length; i++) {
+      const validResult = deriveSharedLetters(str, data[i])
+      if (validResult) {
+        acc = deriveSharedLetters(str, data[i])
       }
-    })
-  })
-
-  const uniqueMatches = new Set(matches)
-  return [...uniqueMatches]
+    }
+    return acc
+  }, '')
 }
 
-function deriveSharedLetters([stringA, stringB]) {
-  return stringA
-    .split('')
-    .filter((letter, idx) => letter === stringB[idx])
-    .join('')
-}
-
-const boxArray = findMatchingBoxes(dataArray)
-const sharedLetters = deriveSharedLetters(boxArray)
-
-console.log(sharedLetters)
+console.log(findMatchingBoxes(dataArray))
