@@ -1,30 +1,32 @@
 const readFile = require('../utils/read-data-file')
 const data = readFile(process.argv[2])
 const dataArray = data.split('\n')
-// const dataArray = ["#1 @ 1,3: 4x4", "#2 @ 3,1: 4x4", "#3 @ 5,5: 2x2"]
 
 const decoratedData = dataArray.map(row => {
-  const xCoord = parseInt(row.match('\@ ([0123456789]+)')[1], 10)
-  const yCoord = parseInt(row.match('\,([0123456789]+)')[1], 10)
-  const width = parseInt(row.match('\: ([0123456789]+)')[1], 10)
+  const xCoord = parseInt(row.match('@ ([0123456789]+)')[1], 10)
+  const yCoord = parseInt(row.match(',([0123456789]+)')[1], 10)
+  const width = parseInt(row.match(': ([0123456789]+)')[1], 10)
   const height = parseInt(row.match('x([0123456789]+)')[1], 10)
+  const id = parseInt(row.match())
 
   return {
-    xCoord, yCoord, width, height
+    xCoord,
+    yCoord,
+    width,
+    height,
   }
 })
 
 function buildFrequencyMap(data) {
   return data.reduce((acc, curr) => {
-
-    for (let i = 0; i < curr.height; i++) {     
+    for (let i = 0; i < curr.height; i++) {
       let y = curr.yCoord + i
-  
-      for (let j = 0; j < curr.width; j++) {     
+
+      for (let j = 0; j < curr.width; j++) {
         let x = curr.xCoord + j
 
         let position = acc[`${x},${y}`]
-        acc[`${x},${y}`] = position ? position += 1 : 1
+        acc[`${x},${y}`] = position ? (position += 1) : 1
       }
     }
 
@@ -42,11 +44,3 @@ const sharedTileCount = Object.keys(frequencyMap).reduce((acc, curr) => {
 }, 0)
 
 console.log(sharedTileCount)
-
-
-// #1 @ 1,3: 4x4
-
-// 13 23 33 43
-// 14 24 34 44
-// 15 25 35 45
-// 16 26 36 37
