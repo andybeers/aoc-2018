@@ -7,7 +7,6 @@ const decoratedData = dataArray.map(row => {
   const yCoord = parseInt(row.match(',([0123456789]+)')[1], 10)
   const width = parseInt(row.match(': ([0123456789]+)')[1], 10)
   const height = parseInt(row.match('x([0123456789]+)')[1], 10)
-  const id = parseInt(row.match())
 
   return {
     xCoord,
