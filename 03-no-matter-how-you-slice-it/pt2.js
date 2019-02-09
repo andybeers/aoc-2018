@@ -1,7 +1,7 @@
 const readFile = require('../utils/read-data-file')
 const data = readFile(process.argv[2])
 const dataArray = data.split('\n')
-const testData = ['#1 @ 850,301: 23x12', '#2 @ 898,245: 15x10']
+// const testData = ['#1 @ 850,301: 23x12', '#2 @ 898,245: 15x10']
 
 const decoratedData = dataArray.map(row => {
   const xCoord = parseInt(row.match('@ ([0123456789]+)')[1], 10)
