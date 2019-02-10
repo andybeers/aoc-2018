@@ -3,6 +3,7 @@ const readFile = require('../utils/read-data-file')
 const data = readFile(process.argv[2])
 const dataArray = data.split('\n')
 
+// Arrange data chronologically
 const timeSortedData = dataArray.sort()
 
 // EXAMPLE GUARD DATA
@@ -45,29 +46,39 @@ function getMinuteDiff(dateA, dateB) {
 }
 
 /**
- * Accepts array of guard data and returns the id of the guard who
- * spent the most minutes asleep along with their minutes slept total
+ * Accepts the raw puzzle data and returns an object
+ * whose keys are guard Ids
+ *
+ * @param {String} dataString
+ * @returns {Object} map of guard Ids
+ */
+function constructGuardMap(dataString) {
+  const ids = dataString.match(/#(\d+)/gm)
+
+  return ids.reduce((acc, curr) => {
+    const stripped = curr.replace('#', '')
+    acc[stripped] = 0
+    return acc
+  }, {})
+}
+
+/**
+ * Accepts array of puzzle data and a guardMap and returns the id of the
+ * guard who spent the most minutes asleep
  *
  * @param {Array} data array of chronologically sorted guard data strings
- * @returns {Object} sleepiestGuardId and highestMinutesSlept
+ * @param {Object} guardMap map of guard ids
+ * @returns {Number} id of sleepiest guard
  */
-function findSleepiestGuard(data) {
+function findSleepiestGuard(data, guardMap) {
   let currentGuardId = ''
   let sleepStartTime = ''
   let currentSleepTotal = 0
 
-  let highestMinutesSlept = 0
-  let sleepiestGuardId = ''
-
-  const setNewGuard = () => {
-    sleepStartTime = ''
-    sleepEndTime = ''
-    currentSleepTotal = 0
-  }
-
   data.forEach(record => {
     // New guard comes on duty
     if (record.includes('Guard #')) {
+      guardMap[currentGuardId] += currentSleepTotal
       currentSleepTotal = 0
       currentGuardId = parseInt(record.match(/Guard #(\d+)/)[1])
     } else if (record.includes('asleep')) {
@@ -77,18 +88,79 @@ function findSleepiestGuard(data) {
       // On waking, reconcile times
       const wakeTime = dateFromString(record.match(/\[(.*)\]/)[1])
       currentSleepTotal += getMinuteDiff(sleepStartTime, wakeTime)
+    }
+  })
 
-      if (currentSleepTotal > highestMinutesSlept) {
-        highestMinutesSlept = currentSleepTotal
-        sleepiestGuardId = currentGuardId
+  const guardArray = Object.keys(guardMap).map(key => ({
+    id: key,
+    minutes: guardMap[key],
+  }))
+
+  guardArray.sort((a, b) => a.minutes > b.minutes)
+
+  return guardArray[0].id
+}
+
+/**
+ * Returns all relevant data items for a given guard
+ *
+ * @param {String} data sorted puzzle data
+ * @param {Number} guardId id of desired guard data
+ * @returns {Array} array of data rows
+ */
+function guardDataById(data, guardId) {
+  let dataForGuard = []
+  let foundGuard = false
+
+  data.forEach(item => {
+    if (!item) {
+      console.log('scoop')
+    } else if (foundGuard && !item.includes('Guard #')) {
+      dataForGuard.push(item)
+    } else if (item.includes('Guard #')) {
+      if (item.match(/Guard #(\d+)/)[1] === guardId) {
+        foundGuard = true
+      } else {
+        foundGuard = false
       }
     }
   })
 
-  return {
-    sleepiestGuardId,
-    highestMinutesSlept,
-  }
+  return dataForGuard
 }
 
-const { highestMinutesSlept, sleepiestGuardId } = findSleepiestGuard(timeSortedData)
+/**
+ * Accepts an array of just sleep/wake data for a given guard
+ * and returns the minute they are most often sleeping.
+ *
+ * @param {Array} data Array wake/sleep data for a guard
+ * @returns {Number} the minute a guard most often sleeps
+ */
+function getSleepiestMinute(data) {
+  const minuteMap = {}
+  let sleepTime
+
+  data.forEach((row, idx) => {
+    const minute = parseInt(row.match(/:(\d+)/)[1])
+
+    // Sleep begin
+    if (idx % 2 === 0) {
+      sleepTime = minute
+    } else {
+      // Wake
+      for (let i = sleepTime; i < minute; i++) {
+        minuteMap[i] = minuteMap[i] ? minuteMap[i] + 1 : 1
+      }
+    }
+  })
+
+  return Object.keys(minuteMap).sort((a, b) => minuteMap[b] - minuteMap[a])[0]
+}
+
+const sleepiestGuard = findSleepiestGuard(timeSortedData, constructGuardMap(data))
+console.log('Sleepiest guard ID: ', sleepiestGuard)
+
+const sleepiestGuardData = guardDataById(timeSortedData, '1549')
+
+console.log('Sleepiest minute: ', getSleepiestMinute(sleepiestGuardData))
+console.log('Answer: ', 1549 * 41)
