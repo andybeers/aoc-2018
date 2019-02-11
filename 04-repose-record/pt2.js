@@ -6,13 +6,6 @@ const dataArray = data.split('\n')
 // Arrange data chronologically
 const timeSortedData = dataArray.sort()
 
-// EXAMPLE GUARD DATA
-// '[1518-03-20 23:50] Guard #1553 begins shift',
-// '[1518-03-21 00:00] falls asleep',
-// '[1518-03-21 00:41] wakes up',
-// '[1518-03-21 00:45] falls asleep',
-// '[1518-03-21 00:59] wakes up',
-
 /**
  * Accepts a date-time string from the data source of format:
  * 1518-03-20 23:50
@@ -96,7 +89,7 @@ function findSleepiestGuard(data, guardMap) {
     minutes: guardMap[key],
   }))
 
-  guardArray.sort((a, b) => b.minutes - a.minutes)
+  guardArray.sort((a, b) => a.minutes - b.minutes)
 
   return guardArray[0].id
 }
@@ -134,7 +127,7 @@ function guardDataById(data, guardId) {
  * @param {Array} data Array wake/sleep data for a guard
  * @returns {Number} the minute a guard most often sleeps
  */
-function getSleepiestMinute(data) {
+function getMinuteMap(data) {
   const minuteMap = {}
   let sleepTime
 
@@ -152,13 +145,40 @@ function getSleepiestMinute(data) {
     }
   })
 
-  return Object.keys(minuteMap).sort((a, b) => minuteMap[b] - minuteMap[a])[0]
+  return minuteMap
 }
 
-const sleepiestGuard = findSleepiestGuard(timeSortedData, constructGuardMap(data))
-console.log('Sleepiest guard ID: ', sleepiestGuard)
+function getHighestMinute(minuteMap) {
+  const highestMin = Object.keys(minuteMap).sort((a, b) => {
+    return minuteMap[b] - minuteMap[a]
+  })[0]
 
-const sleepiestGuardData = guardDataById(timeSortedData, '1549')
+  return {
+    minute: highestMin,
+    count: minuteMap[highestMin],
+  }
+}
 
-console.log('Sleepiest minute: ', getSleepiestMinute(sleepiestGuardData))
-console.log('Answer: ', 1549 * 41)
+function gatherGuardData(guardMap) {
+  const guardData = Object.keys(guardMap).reduce((acc, curr) => {
+    acc[curr] = getMinuteMap(guardDataById(timeSortedData, curr))
+    return acc
+  }, {})
+
+  return Object.keys(guardData).map(guardId => {
+    const { minute, count } = getHighestMinute(guardData[guardId])
+
+    return {
+      guardId,
+      minute,
+      count,
+    }
+  })
+}
+
+const guardAndMinute = gatherGuardData(constructGuardMap(data)).sort(
+  (a, b) => b.count - a.count,
+)[0]
+
+console.log(guardAndMinute)
+console.log(parseInt(guardAndMinute.guardId) * guardAndMinute.minute)
